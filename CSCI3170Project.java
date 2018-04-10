@@ -23,71 +23,54 @@ public class CSCI3170Project {
 
 	public static void createTables(Connection mySQLDB) throws SQLException{
 		String neaSQL = "CREATE TABLE NEA (";
-		neaSQL += "NID VARCHAR(10) PRIMARY KEY NOT NULL,";
+		neaSQL += "NID VARCHAR(10) NOT NULL,";
 		neaSQL += "Distance DECIMAL(10,2) UNSIGNED NOT NULL,";
 		neaSQL += "Family VARCHAR(6) NOT NULL,";
 		neaSQL += "Duration INT(3) UNSIGNED NOT NULL,";
-		neaSQL += "Energy DECIMAL(10,2) UNSIGNED NOT NULL)";
+		neaSQL += "Energy DECIMAL(10,2) UNSIGNED NOT NULL,";
+		neaSQL += "Resources VARCHAR(2),";
+		neaSQL += "PRIMARY KEY (NID))";
 
-		String resourceSQL = "CREATE TABLE manufacturer (";
-		resourceSQL += "m_id INT PRIMARY KEY NOT NULL,";
-		resourceSQL += "m_name VARCHAR(20) NOT NULL,";
-		resourceSQL += "m_addr VARCHAR(50) NOT NULL,";
-		resourceSQL += "m_phone INT NOT NULL,";
-		resourceSQL += "CHECK (m_id BETWEEN 1 AND 99),";
-		resourceSQL += "CHECK (m_phone BETWEEN 10000000 AND 99999999))";
+		String resourceSQL = "CREATE TABLE Resource (";
+		resourceSQL += "Type VARCHAR(2) NOT NULL,";
+		resourceSQL += "Density DECIMAL(10,2) UNSIGNED NOT NULL,";
+		resourceSQL += "Value DECIMAL(10,2) UNSIGNED NOT NULL,";
+		resourceSQL += "PRIMARY KEY (Type))";
 
-		String salespersonSQL = "CREATE TABLE salesperson (";
-		salespersonSQL += "s_id INT PRIMARY KEY NOT NULL,";
-		salespersonSQL += "s_name VARCHAR(20) NOT NULL,";
-		salespersonSQL += "s_addr VARCHAR(50) NOT NULL,";
-		salespersonSQL += "s_phone INT NOT NULL,";
-		salespersonSQL += "s_experience INT NOT NULL,";
-		salespersonSQL += "CHECK (s_id BETWEEN 1 AND 99),";
-		salespersonSQL += "CHECK (s_phone BETWEEN 10000000 AND 99999999),";
-		salespersonSQL += "CHECK (s_experience BETWEEN 1 AND 9))";
+		String spacecraftSQL = "CREATE TABLE SpacecraftModel (";
+		spacecraftSQL += "Agency VARCHAR(4) NOT NULL,";
+		spacecraftSQL += "MID VARCHAR(4) NOT NULL,";
+		spacecraftSQL += "Num INT(2) UNSIGNED NOT NULL,";
+		spacecraftSQL += "Type VARCHAR(1) NOT NULL,";
+		spacecraftSQL += "Energy DECIMAL(10,2) UNSIGNED NOT NULL,";
+		spacecraftSQL += "T INT(3) UNSIGNED NOT NULL,";
+		spacecraftSQL += "Capacity INT(2) UNSIGNED,";
+		spacecraftSQL += "Charge INT(5) UNSIGNED NOT NULL,";
+		spacecraftSQL += "PRIMARY KEY (Agency, MID))";
 
-		String partSQL = "CREATE TABLE part (";
-		partSQL += "p_id INT PRIMARY KEY NOT NULL,";
-		partSQL += "p_name VARCHAR(20) NOT NULL,";
-		partSQL += "p_price INT NOT NULL,";
-		partSQL += "m_id INT NOT NULL,";
-		partSQL += "c_id INT NOT NULL,";
-		partSQL += "p_quantity INT NOT NULL,";
-		partSQL += "p_warranty INT NOT NULL,";
-		partSQL += "FOREIGN KEY (m_id) REFERENCES manufacturer(m_id),";
-		partSQL += "FOREIGN KEY (c_id) REFERENCES category(c_id),";
-		partSQL += "CHECK (p_id BETWEEN 1 AND 999),";
-		partSQL += "CHECK (p_price BETWEEN 1 AND 99999),";
-		partSQL += "CHECK (p_warranty BETWEEN 1 AND 99),";
-		partSQL += "CHECK (p_quantity BETWEEN 0 AND 99))";
-
-		String transactionSQL = "CREATE TABLE transaction (";
-		transactionSQL += "t_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,";
-		transactionSQL += "p_id INT NOT NULL,";
-		transactionSQL += "s_id INT NOT NULL,";
-		transactionSQL += "t_date DATE NOT NULL,";
-		transactionSQL += "FOREIGN KEY (p_id) REFERENCES part(p_id),";
-		transactionSQL += "FOREIGN KEY (s_id) REFERENCES salesperson(s_id),";
-		transactionSQL += "CHECK (t_id BETWEEN 1 AND 9999))";
+		String rentalrecordSQL = "CREATE TABLE RentalRecord (";
+		rentalrecordSQL += "Agency VARCHAR(4) NOT NULL,";
+		rentalrecordSQL += "MID VARCHAR(4) NOT NULL,";
+		rentalrecordSQL += "SNum INT(2) UNSIGNED NOT NULL,";
+		rentalrecordSQL += "CheckoutDate DATE NOT NULL,";
+		rentalrecordSQL += "ReturnDate DATE,";
+		rentalrecordSQL += "PRIMARY KEY (Agency, MID, SNum))";
 
 		Statement stmt  = mySQLDB.createStatement();
 		System.out.print("Processing...");
 
-		//System.err.println("Creating Category Table.");
-		stmt.execute(categorySQL);
+		//System.err.println("Creating Near-Earth Asteroids Table.");
+		stmt.execute(neaSQL);
 
-		//System.err.println("Creating Manufacturer Table.");
-		stmt.execute(manufacturerSQL);
+		//System.err.println("Creating Resources Details Table.");
+		stmt.execute(resourceSQL);
 		
-		//System.err.println("Creating Salesperson Table.");
-		stmt.execute(salespersonSQL);
+		//System.err.println("Creating Space Agencies\' Spacecrafts Table.");
+		stmt.execute(spacecraftSQL);
 
-		//System.err.println("Creating Part Table.");
-		stmt.execute(partSQL);
+		//System.err.println("Creating Spacecraft Rental Records Table.");
+		stmt.execute(rentalrecordSQL);
 
-		//System.err.println("Creating Transaction Table.");
-		stmt.execute(transactionSQL);
 		System.out.println("Done! Database is initialized!");
 		stmt.close();
 	}
@@ -96,11 +79,10 @@ public class CSCI3170Project {
 		Statement stmt  = mySQLDB.createStatement();
 		System.out.print("Processing...");
 		stmt.execute("SET FOREIGN_KEY_CHECKS = 0;");
-		stmt.execute("DROP TABLE IF EXISTS category");
-		stmt.execute("DROP TABLE IF EXISTS manufacturer");
-		stmt.execute("DROP TABLE IF EXISTS part");
-		stmt.execute("DROP TABLE IF EXISTS salesperson");
-		stmt.execute("DROP TABLE IF EXISTS transaction");
+		stmt.execute("DROP TABLE IF EXISTS NEA");
+		stmt.execute("DROP TABLE IF EXISTS Resource");
+		stmt.execute("DROP TABLE IF EXISTS SpacecraftModel");
+		stmt.execute("DROP TABLE IF EXISTS RentalRecord");
 		stmt.execute("SET FOREIGN_KEY_CHECKS = 1;");
 		System.out.println("Done! Database is removed!");
 		stmt.close();
@@ -236,10 +218,10 @@ public class CSCI3170Project {
 	}
 
 	public static void showTables(Scanner menuAns, Connection mySQLDB) throws SQLException{
-		String[] table_name = {"category", "manufacturer", "part", "salesperson", "transaction"};
+		String[] table_name = {"NEA", "Resource", "SpacecraftModel", "RentalRecord"};
 
 		System.out.println("Number of records in each table:");
-		for (int i = 0; i < 5; i++){
+		for (int i = 0; i < 4; i++){
 			Statement stmt  = mySQLDB.createStatement();
 			ResultSet rs = stmt.executeQuery("select count(*) from "+table_name[i]);
 
@@ -429,6 +411,7 @@ public class CSCI3170Project {
 		else if(answer.equals("4")){
 			sellProducts(menuAns, mySQLDB);
 		}
+	}
 
 	public static void countSalespersonRecord(Scanner menuAns, Connection mySQLDB) throws SQLException{
 		String recordSQL = "SELECT S.s_id, S.s_name, S.s_experience, COUNT(T.t_id) ";
