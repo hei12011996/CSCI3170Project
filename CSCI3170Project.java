@@ -24,17 +24,17 @@ public class CSCI3170Project {
 	public static void createTables(Connection mySQLDB) throws SQLException{
 		String neaSQL = "CREATE TABLE NEA (";
 		neaSQL += "NID VARCHAR(10) NOT NULL,";
-		neaSQL += "Distance DECIMAL(10,2) UNSIGNED NOT NULL,";
+		neaSQL += "Distance DOUBLE(11,3) UNSIGNED NOT NULL,";
 		neaSQL += "Family VARCHAR(6) NOT NULL,";
 		neaSQL += "Duration INT(3) UNSIGNED NOT NULL,";
-		neaSQL += "Energy DECIMAL(10,2) UNSIGNED NOT NULL,";
+		neaSQL += "Energy DOUBLE(11,3) UNSIGNED NOT NULL,";
 		neaSQL += "Resources VARCHAR(2),";
 		neaSQL += "PRIMARY KEY (NID))";
 
 		String resourceSQL = "CREATE TABLE Resource (";
 		resourceSQL += "Type VARCHAR(2) NOT NULL,";
-		resourceSQL += "Density DECIMAL(10,2) UNSIGNED NOT NULL,";
-		resourceSQL += "Value DECIMAL(10,2) UNSIGNED NOT NULL,";
+		resourceSQL += "Density DOUBLE(11,3) UNSIGNED NOT NULL,";
+		resourceSQL += "Value DOUBLE(11,3) UNSIGNED NOT NULL,";
 		resourceSQL += "PRIMARY KEY (Type))";
 
 		String spacecraftSQL = "CREATE TABLE SpacecraftModel (";
@@ -42,7 +42,7 @@ public class CSCI3170Project {
 		spacecraftSQL += "MID VARCHAR(4) NOT NULL,";
 		spacecraftSQL += "Num INT(2) UNSIGNED NOT NULL,";
 		spacecraftSQL += "Type VARCHAR(1) NOT NULL,";
-		spacecraftSQL += "Energy DECIMAL(10,2) UNSIGNED NOT NULL,";
+		spacecraftSQL += "Energy DOUBLE(11,3) UNSIGNED NOT NULL,";
 		spacecraftSQL += "T INT(3) UNSIGNED NOT NULL,";
 		spacecraftSQL += "Capacity INT(2) UNSIGNED,";
 		spacecraftSQL += "Charge INT(5) UNSIGNED NOT NULL,";
@@ -90,125 +90,62 @@ public class CSCI3170Project {
 
 	public static void loadTables(Scanner menuAns, Connection mySQLDB) throws SQLException{
 
-		String categorySQL = "INSERT INTO category (c_id, c_name) VALUES (?,?)";
-		String manufacturerSQL = "INSERT INTO manufacturer (m_id, m_name, m_addr, m_phone) VALUES (?,?,?,?)";
-		String partSQL = "INSERT INTO part (p_id, p_name, p_price, m_id, c_id, p_warranty, p_quantity) VALUES (?,?,?,?,?,?,?)";
-		String salespersonSQL = "INSERT INTO salesperson (s_id, s_name, s_addr, s_phone, s_experience) VALUES (?,?,?,?,?)";
-		String transactionSQL = "INSERT INTO transaction (t_id, p_id, s_id, t_date) VALUES (?,?,?,STR_TO_DATE(?,'%d/%m/%Y'))";
-
 		String filePath = "";
-		String targetTable = "";
+		Statement stmt  = mySQLDB.createStatement();
 
 		while(true){
 			System.out.println("");
 			System.out.print("Type in the Source Data Folder Path: ");
 			filePath = menuAns.nextLine();
 			if((new File(filePath)).isDirectory()) break;
+			else System.out.println("[Error]: Source Data Folder not found!");
 		}
+
+		String loadDataSQL = "LOAD DATA LOCAL INFILE \"./";
+		loadDataSQL += filePath;
+
+		String neaSQL = loadDataSQL + "/Near-Earth Asteroids.txt\" ";
+		neaSQL += "INTO TABLE NEA ";
+		neaSQL += "FIELDS TERMINATED BY '\t' ";
+		neaSQL += "LINES TERMINATED BY '\n' ";
+		neaSQL += "IGNORE 1 ROWS ";
+		neaSQL += "(NID, Distance, Family, Duration, Energy, @resource) ";
+		neaSQL += "SET ";
+		neaSQL += "Resources = NULLIF(@resource, 'null') ";
+
+		String resourceSQL = loadDataSQL + "/Resources Details.txt\" ";
+		resourceSQL += "INTO TABLE Resource ";
+		resourceSQL += "FIELDS TERMINATED BY '\t' ";
+		resourceSQL += "LINES TERMINATED BY '\n' ";
+		resourceSQL += "IGNORE 1 ROWS ";
+		resourceSQL += "(Type, Density, Value) ";
+
+		String spacecraftSQL = loadDataSQL + "/Space Agencies\' Spacecrafts.txt\" ";
+		spacecraftSQL += "INTO TABLE SpacecraftModel ";
+		spacecraftSQL += "FIELDS TERMINATED BY '\t' ";
+		spacecraftSQL += "LINES TERMINATED BY '\n' ";
+		spacecraftSQL += "IGNORE 1 ROWS ";
+		spacecraftSQL += "(Agency, MID, Num, Type, Energy, T, @capacity, Charge) ";
+		spacecraftSQL += "SET ";
+		spacecraftSQL += "Capacity = NULLIF(@capacity, 'null') ";
+
+		String rentalrecordSQL = loadDataSQL + "/Spacecraft Rental Records.txt\" ";
+		rentalrecordSQL += "INTO TABLE RentalRecord ";
+		rentalrecordSQL += "FIELDS TERMINATED BY '\t' ";
+		rentalrecordSQL += "LINES TERMINATED BY '\n' ";
+		rentalrecordSQL += "IGNORE 1 ROWS ";
+		rentalrecordSQL += "(Agency, MID, SNum, @checkoutdate, @returndate) ";
+		rentalrecordSQL += "SET ";
+		rentalrecordSQL += "CheckoutDate = STR_TO_DATE(@checkoutdate,'%d-%m-%Y'), ";
+		rentalrecordSQL += "ReturnDate = NULLIF(STR_TO_DATE(@returndate,'%d-%m-%Y'), 'null') ";
 
 		System.out.print("Processing...");
-		//System.err.println("Loading Category");
+
 		try{
-			PreparedStatement stmt = mySQLDB.prepareStatement(categorySQL);
-			String line = null;
-			BufferedReader dataReader = new BufferedReader(new FileReader(filePath+"/category.txt"));
-
-			while ((line = dataReader.readLine()) != null) {
-				String[] dataFields = line.split("\t");
-				stmt.setInt(1, Integer.parseInt(dataFields[0]));
-				stmt.setString(2, dataFields[1]);
-				stmt.addBatch();
-			}
-			stmt.executeBatch();
-			stmt.close();
-		}catch (Exception e){
-			System.out.println(e);
-		}
-
-		//System.err.println("Loading Manufacturer");
-		try{
-			PreparedStatement stmt = mySQLDB.prepareStatement(manufacturerSQL);
-			String line = null;
-			BufferedReader dataReader = new BufferedReader(new FileReader(filePath+"/manufacturer.txt"));
-
-			while ((line = dataReader.readLine()) != null) {
-				String[] dataFields = line.split("\t");
-				stmt.setInt(1, Integer.parseInt(dataFields[0]));
-				stmt.setString(2, dataFields[1]);
-				stmt.setString(3, dataFields[2]);
-				stmt.setInt(4, Integer.parseInt(dataFields[3]));
-				stmt.addBatch();
-			}
-			stmt.executeBatch();
-			stmt.close();
-		}catch (Exception e){
-			System.out.println(e);
-		}
-
-		//System.err.println("Loading Part");
-		try{
-			PreparedStatement stmt = mySQLDB.prepareStatement(partSQL);
-
-			String line = null;
-			BufferedReader dataReader = new BufferedReader(new FileReader(filePath+"/part.txt"));
-
-			while ((line = dataReader.readLine()) != null) {
-				String[] dataFields = line.split("\t");
-				stmt.setInt(1, Integer.parseInt(dataFields[0]));
-				stmt.setString(2, dataFields[1]);
-				stmt.setInt(3, Integer.parseInt(dataFields[2]));
-				stmt.setInt(4, Integer.parseInt(dataFields[3]));
-				stmt.setInt(5, Integer.parseInt(dataFields[4]));
-				stmt.setInt(6, Integer.parseInt(dataFields[5]));
-				stmt.setInt(7, Integer.parseInt(dataFields[6]));
-				stmt.addBatch();
-			}
-
-			stmt.executeBatch();
-			stmt.close();
-		}catch (Exception e){
-			System.out.println(e);
-		}
-
-		//System.err.println("Loading Salesperson");
-		try{
-			PreparedStatement stmt = mySQLDB.prepareStatement(salespersonSQL);
-			String line = null;
-			BufferedReader dataReader = new BufferedReader(new FileReader(filePath+"/salesperson.txt"));
-
-			while ((line = dataReader.readLine()) != null) {
-				String[] dataFields = line.split("\t");
-				stmt.setInt(1, Integer.parseInt(dataFields[0]));
-				stmt.setString(2, dataFields[1]);
-				stmt.setString(3, dataFields[2]);
-				stmt.setInt(4, Integer.parseInt(dataFields[3]));
-				stmt.setInt(5, Integer.parseInt(dataFields[4]));
-				stmt.addBatch();
-			}
-			stmt.executeBatch();
-			stmt.close();
-		}catch (Exception e){
-			System.out.println(e);
-		}
-
-		//System.err.println("Loading Transaction");
-		try{
-			PreparedStatement stmt = mySQLDB.prepareStatement(transactionSQL);
-			String line = null;
-			BufferedReader dataReader = new BufferedReader(new FileReader(filePath+"/transaction.txt"));
-
-			while ((line = dataReader.readLine()) != null) {
-				String[] dataFields = line.split("\t");
-				stmt.setInt(1, Integer.parseInt(dataFields[0]));
-				stmt.setInt(2, Integer.parseInt(dataFields[1]));
-				stmt.setInt(3, Integer.parseInt(dataFields[2]));
-				stmt.setString(4, dataFields[3]);
-
-				//System.err.println("Record: " + i);
-				stmt.addBatch();
-				//i++;
-			}
-			stmt.executeBatch();
+			stmt.execute(neaSQL);
+			stmt.execute(resourceSQL);
+			stmt.execute(spacecraftSQL);
+			stmt.execute(rentalrecordSQL);
 			stmt.close();
 		}catch (Exception e){
 			System.out.println(e);
