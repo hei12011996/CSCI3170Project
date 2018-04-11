@@ -6,6 +6,7 @@ public class CSCI3170Project {
 	public static String dbAddress = "jdbc:mysql://projgw.cse.cuhk.edu.hk:2312/db37";
 	public static String dbUsername = "Group37";
 	public static String dbPassword = "csci3170gp37";
+	// mysql --host=projgw --port=2312 -u Group37 -p
 
 	public static Connection connectToMySQL(){
 		Connection con = null;
@@ -147,11 +148,11 @@ public class CSCI3170Project {
 			stmt.execute(spacecraftSQL);
 			stmt.execute(rentalrecordSQL);
 			stmt.close();
-		}catch (Exception e){
+			System.out.println("Done! Data is inputted to the database!");
+		} catch (Exception e){
 			System.out.println(e);
 		}
 
-		System.out.println("Done! Data is inputted to the database!");
 	}
 
 	public static void showTables(Scanner menuAns, Connection mySQLDB) throws SQLException{
@@ -203,117 +204,231 @@ public class CSCI3170Project {
 		}
 	}
 
-	public static void searchParts(Scanner menuAns, Connection mySQLDB) throws SQLException{
-		String ans = null, keyword = null, method = null, ordering = null;
+	public static void searchNEA(Scanner menuAns, Connection mySQLDB) throws SQLException{
+		String ans = null, keyword = null, method = null;
 		String searchSQL = "";
 		PreparedStatement stmt = null;
 
-		searchSQL += "SELECT P.p_id, P.p_name, M.m_name, C.c_name, P.p_quantity, P.p_warranty, P.p_price ";
-		searchSQL += "FROM part P, manufacturer M, category C ";
-		searchSQL += "WHERE P.m_id = M.m_id AND P.c_id = C.c_id ";
+		searchSQL += "SELECT NID, Distance, Family, Duration, Energy, Resources ";
+		searchSQL += "FROM NEA ";
+		searchSQL += "WHERE ";
 
 		while(true){
 			System.out.println("Choose the Search criterion:");
-			System.out.println("1. Part Name");
-			System.out.println("2. Manufacturer Name");
-			System.out.print("Choose the search criterion: ");
+			System.out.println("1. ID");
+			System.out.println("2. Family");
+			System.out.println("3. Resource type");
+			System.out.print("My criterion: ");
 			ans = menuAns.nextLine();
-			if(ans.equals("1")||ans.equals("2")) break;
+			if(ans.equals("1")||ans.equals("2")||ans.equals("3")) break;
 		}
 		method = ans;
 
 		while(true){
-			System.out.print("Type in the Search Keyword:");
+			System.out.print("Type in the search keyword: ");
 			ans = menuAns.nextLine();
 			if(!ans.isEmpty()) break;
 		}
 		keyword = ans;
 
-		while(true){
-			System.out.println("Choose ordering:");                                  
-			System.out.println("1. By price, ascending order");
-			System.out.println("2. By price, descending order");              
-			System.out.print("Choose the search criterion: ");
-			ans = menuAns.nextLine();
-			if(ans.equals("1")||ans.equals("2")) break;
-		}   
-		ordering = ans;
-
 		if(method.equals("1")){
-			searchSQL += " AND P.p_name LIKE ? ";
-		}else if(method.equals("2")){
-			searchSQL += " AND M.m_name LIKE ? ";
+			searchSQL += " NID = ? ";
 		}
-
-		if(ordering.equals("1")){
-			searchSQL += " ORDER BY P.p_price ASC";
-		}else if(ordering.equals("2")){
-			searchSQL += " ORDER BY P.p_price DESC";
+		else if(method.equals("2")){
+			searchSQL += " Family LIKE ? ";
+		}
+		else if(method.equals("3")){
+			searchSQL += " Resources LIKE ? ";
 		}
 
 		stmt = mySQLDB.prepareStatement(searchSQL);
-		stmt.setString(1, "%" + keyword + "%");
-
-		String[] field_name = {"ID", "Name", "Manufacturer", "Category", "Quantity", "Warranty", "Price"};
-		for (int i = 0; i < 7; i++){
-			 System.out.print("| " + field_name[i] + " ");
+		if(method.equals("1")){
+			stmt.setString(1, keyword);
 		}
-		System.out.println("|");
+		else{
+			stmt.setString(1, "%" + keyword + "%");
+		}
 
 		ResultSet resultSet = stmt.executeQuery();
-		while(resultSet.next()){
-			for (int i = 1; i <= 7; i++){
-				System.out.print("| " + resultSet.getString(i) + " ");
-			}    
-			System.out.println("|");
+		if(!resultSet.next()){
+			System.out.println("No query result returned based on the provided keyword! Returning to the main menu...");
 		}
-		System.out.println("End of Query");
+		else{
+			String[] field_name = {"ID", "Distance", "Family", "Duration", "Energy", "Resources"};
+			System.out.print(String.format("| %10s ", field_name[0]));  //ID
+			System.out.print(String.format("| %10s ", field_name[1]));  //Distance
+			System.out.print(String.format("| %6s ", field_name[2]));  //Family
+			System.out.print(String.format("| %8s ", field_name[3]));  //Duration
+			System.out.print(String.format("| %10s ", field_name[4])); //Energy
+			System.out.print(String.format("| %9s ", field_name[5]));  //Resources
+			// for (int i = 0; i < 6; i++){
+			// 	 System.out.print("| " + field_name[i] + " ");
+			// }
+			System.out.println("|");
+
+			do{
+				System.out.print(String.format("| %10s ", resultSet.getString(1)));  //ID
+				System.out.print(String.format("| %10s ", resultSet.getString(2)));  //Distance
+				System.out.print(String.format("| %6s ", resultSet.getString(3)));  //Family
+				System.out.print(String.format("| %8s ", resultSet.getString(4)));  //Duration
+				System.out.print(String.format("| %10s ", resultSet.getString(5))); //Energy
+				System.out.print(String.format("| %9s ", resultSet.getString(6)));  //Resources
+				// for (int i = 1; i <= 6; i++){
+				// 	System.out.print("| " + resultSet.getString(i) + " ");
+				// } 
+				System.out.println("|");
+			} while(resultSet.next());
+
+			System.out.println("End of Query");
+		}
 		resultSet.close();
 		stmt.close();
 	}
 
-	public static void sellProducts(Scanner menuAns, Connection mySQLDB) throws SQLException{
-		String updateProductSQL = "UPDATE part set p_quantity = p_quantity - 1 WHERE p_id = ? and p_quantity > 0";
-		String insertRecordSQL = "INSERT INTO transaction VALUES (NULL, ?, ?, CURDATE())";
-		String remainQuantitySQL = "SELECT p_id, p_name, p_quantity FROM part WHERE p_id = ?";
-
-		String p_id = null, s_id = null;
-
-		while(true){
-			System.out.print("Enter The Part ID: ");
-			p_id = menuAns.nextLine();
-			if(!p_id.isEmpty()) break;
-		}
+	public static void searchSpacecraft(Scanner menuAns, Connection mySQLDB) throws SQLException{
+		String ans = null, keyword = null, method = null;
+		String searchSQL = "";
+		PreparedStatement stmt = null;
+		// select S.Agency, S.MID, R.SNum, S.Type, S.Energy, S.T, S.Capacity, S.Charge from SpacecraftModel S LEFT JOIN RentalRecord R ON S.Agency = R.Agency AND S.MID = R.MID;
+		searchSQL += "SELECT S.Agency, S.MID, R.SNum, S.Type, S.Energy, S.T, S.Capacity, S.Charge ";
+		searchSQL += "from SpacecraftModel S ";
+		searchSQL += "LEFT JOIN RentalRecord R ON S.Agency = R.Agency AND S.MID = R.MID ";
+		searchSQL += "WHERE ";
 
 		while(true){
-			System.out.print("Enter The Salesperson ID: ");
-			s_id = menuAns.nextLine();
-			if(!s_id.isEmpty()) break;
+			System.out.println("Choose the Search criterion:");
+			System.out.println("1. Agency Name");
+			System.out.println("2. Type");
+			System.out.println("3. Least energy [km/s]");
+			System.out.println("4. Least working time [days]");
+			System.out.println("5. Least capacity [m^3]");
+			System.out.print("My criterion: ");
+			ans = menuAns.nextLine();
+			if(ans.equals("1")||ans.equals("2")||ans.equals("3")||ans.equals("4")||ans.equals("5")) break;
+		}
+		method = ans;
+
+		while(true){
+			System.out.print("Type in the search keyword: ");
+			ans = menuAns.nextLine();
+			if(!ans.isEmpty()) break;
+		}
+		keyword = ans;
+
+		if(method.equals("1")){
+			searchSQL += " S.Agency = ? ";
+		}
+		else if(method.equals("2")){
+			searchSQL += " S.Type = ? ";
+		}
+		else if(method.equals("3")){
+			searchSQL += " S.Energy = ? ";
+		}
+		else if(method.equals("4")){
+			searchSQL += " S.Capacity = ? ";
+		}
+		else if(method.equals("5")){
+			searchSQL += " S.Charge = ? ";
 		}
 
-		PreparedStatement stmt = mySQLDB.prepareStatement(updateProductSQL);
-		stmt.setString(1, p_id);
-		
-		int retVal = stmt.executeUpdate();
-		if(retVal == 0){
-			System.err.println("[Error]: This Product is currently out of stock");
-			return;
+		stmt = mySQLDB.prepareStatement(searchSQL);
+		stmt.setString(1, keyword);
+
+		ResultSet resultSet = stmt.executeQuery();
+		if(!resultSet.next()){
+			System.out.println("No query result returned based on the provided keyword! Returning to the main menu...");
 		}
+		else{
+			String[] field_name = {"Agency", "MID", "SNum", "Type", "Energy", "T", "Capacity", "Charge"};
+			System.out.print(String.format("| %6s ", field_name[0]));  //Agency
+			System.out.print(String.format("| %4s ", field_name[1]));  //MID
+			System.out.print(String.format("| %4s ", field_name[2]));  //SNum
+			System.out.print(String.format("| %4s ", field_name[3]));  //Type
+			System.out.print(String.format("| %10s ", field_name[4])); //Energy
+			System.out.print(String.format("| %3s ", field_name[5]));  //T
+			System.out.print(String.format("| %8s ", field_name[6]));  //Capacity
+			System.out.print(String.format("| %6s ", field_name[7]));  //Charge
+			// for (int i = 0; i < 8; i++){
+			// 	 System.out.print(String.format("| %8s ", field_name[i]));
+			// }
+			System.out.println("|");
+
+			do{
+				System.out.print(String.format("| %6s ", resultSet.getString(1)));  //Agency
+				System.out.print(String.format("| %4s ", resultSet.getString(2)));  //MID
+				System.out.print(String.format("| %4s ", resultSet.getString(3)));  //SNum
+				System.out.print(String.format("| %4s ", resultSet.getString(4)));  //Type
+				System.out.print(String.format("| %10s ", resultSet.getString(5))); //Energy
+				System.out.print(String.format("| %3s ", resultSet.getString(6)));  //T
+				System.out.print(String.format("| %8s ", resultSet.getString(7)));  //Capacity
+				System.out.print(String.format("| %6s ", resultSet.getString(8)));  //Charge
+				// for (int i = 1; i <= 8; i++){
+				// 	System.out.print(String.format("| %8s ", resultSet.getString(i)));
+				// }
+				System.out.println("|");
+			} while(resultSet.next());
+
+			System.out.println("End of Query");
+		}
+		resultSet.close();
 		stmt.close();
+	}
 
-		PreparedStatement stmt2 = mySQLDB.prepareStatement(insertRecordSQL);
-		stmt2.setString(1, p_id);
-		stmt2.setString(2, s_id);
-		stmt2.executeUpdate();
-		stmt2.close();
+	public static void searchCertainMissionDesign(Scanner menuAns, Connection mySQLDB) throws SQLException{
+		String ans = null, nid = null;
+		String searchSQL = "";
+		PreparedStatement stmt = null;
 
-		PreparedStatement stmt3 = mySQLDB.prepareStatement(remainQuantitySQL);
-		stmt3.setString(1, p_id);  
-		ResultSet resultSet = stmt3.executeQuery();
-		resultSet.next();
-		System.out.println("Product: "+ resultSet.getString(2) + "(id: " + resultSet.getString(1) + ") Remaining Quality: " + resultSet.getString(3));
+		searchSQL += "SELECT S.Agency, S.MID, RentalRecord.SNum, S.Charge * NEA.Duration AS 'Cost', R.Value * R.Density * S.Capacity - S.Charge * NEA.Duration AS 'Benefit'";
+		searchSQL += "FROM NEA LEFT JOIN Resource R ON NEA.Resources = R.Type, ";
+		searchSQL += "SpacecraftModel S LEFT JOIN RentalRecord ON S.Agency = RentalRecord.Agency AND S.MID = RentalRecord.MID ";
+		searchSQL += "WHERE S.Type = 'A' ";
+		searchSQL += "AND S.Energy > NEA.Energy ";
+		searchSQL += "AND S.T > NEA.Duration ";
+		searchSQL += "AND NEA.Resources IS NOT NULL ";
+		searchSQL += "AND RentalRecord.ReturnDate IS NOT NULL ";
+		searchSQL += "AND NEA.NID = ? ";
+		searchSQL += "ORDER BY Benefit DESC";
 
-		stmt3.close();
+		while(true){
+			System.out.print("Type in the NEA ID: ");
+			ans = menuAns.nextLine();
+			if(!ans.isEmpty()) break;
+		}
+		nid = ans;
+
+		stmt = mySQLDB.prepareStatement(searchSQL);
+		stmt.setString(1, nid);
+
+		ResultSet resultSet = stmt.executeQuery();
+		if(!resultSet.next()){
+			System.out.println("No query result returned based on the provided keyword! Returning to the main menu...");
+		}
+		else{
+			String[] field_name = {"Agency", "MID", "SNum", "Cost", "Benefit"};
+			System.out.print(String.format("| %6s ", field_name[0]));  //Agency
+			System.out.print(String.format("| %4s ", field_name[1]));  //MID
+			System.out.print(String.format("| %4s ", field_name[2]));  //SNum
+			System.out.print(String.format("| %10s ", field_name[3])); //Cost
+			System.out.print(String.format("| %13s ", field_name[4])); //Benefit
+			// for (int i = 0; i < 5; i++){
+			// 	 System.out.print(String.format("| %8s ", field_name[i]));
+			// }
+			System.out.println("|");
+			do{
+				System.out.print(String.format("| %6s ", resultSet.getString(1)));  //Agency
+				System.out.print(String.format("| %4s ", resultSet.getString(2)));  //MID
+				System.out.print(String.format("| %4s ", resultSet.getString(3)));  //SNum
+				System.out.print(String.format("| %10s ", resultSet.getString(4))); //Cost
+				System.out.print(String.format("| %13s ", resultSet.getString(5))); //Benefit
+				// for (int i = 1; i <= 8; i++){
+				// 	System.out.print(String.format("| %8s ", resultSet.getString(i)));
+				// }
+				System.out.println("|");
+			} while(resultSet.next());
+		}
+		resultSet.close();
+		stmt.close();
 	}
 
 	public static void customerMenu(Scanner menuAns, Connection mySQLDB) throws SQLException{
@@ -337,16 +452,16 @@ public class CSCI3170Project {
 		}
 		
 		if(answer.equals("1")){
-			searchParts(menuAns, mySQLDB);
+			searchNEA(menuAns, mySQLDB);
 		}
 		else if(answer.equals("2")){
-			sellProducts(menuAns, mySQLDB);
+			searchSpacecraft(menuAns, mySQLDB);
 		}
 		else if(answer.equals("3")){
-			sellProducts(menuAns, mySQLDB);
+			searchCertainMissionDesign(menuAns, mySQLDB);
 		}
 		else if(answer.equals("4")){
-			sellProducts(menuAns, mySQLDB);
+			searchCertainMissionDesign(menuAns, mySQLDB);
 		}
 	}
 
