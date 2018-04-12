@@ -543,72 +543,107 @@ public class CSCI3170Project {
 		}
 	}
 
-	public static void countSalespersonRecord(Scanner menuAns, Connection mySQLDB) throws SQLException{
-		String recordSQL = "SELECT S.s_id, S.s_name, S.s_experience, COUNT(T.t_id) ";
-		recordSQL += "FROM transaction T, salesperson S ";
-		recordSQL += "WHERE T.s_id = S.s_id AND S.s_experience >= ? AND S.s_experience <= ? ";
-		recordSQL += "GROUP BY S.s_id, S.s_name, S.s_experience ";
-		recordSQL += "ORDER BY S.s_id DESC";
-		
-		String expBegin = null, expEnd = null;
+public static void rentSpaceCraft(Scanner menuAns, Connection mySQLDB) throws SQLException{
+	String agency = null, mid = null, snum = null;
 
-		while(true){
-			System.out.print("Type in the lower bound for years of experience: ");
-			expBegin = menuAns.nextLine();
-			if(!expBegin.isEmpty()) break;
-		}
-
-		while(true){
-			System.out.print("Type in the upper bound for years of experience: ");
-			expEnd = menuAns.nextLine();
-			if(!expEnd.isEmpty()) break;
-		}
-
-		PreparedStatement stmt  = mySQLDB.prepareStatement(recordSQL);
-		stmt.setInt(1, Integer.parseInt(expBegin));
-		stmt.setInt(2, Integer.parseInt(expEnd));
-		
-		ResultSet resultSet = stmt.executeQuery();
-
-		System.out.println("Transaction Record:");
-		
-		System.out.println("| ID | Name | Years of Experience | Number of Transaction |");
-		while(resultSet.next()){
-			for (int i = 1; i <= 4; i++){
-				System.out.print("| " + resultSet.getString(i) + " ");
-			}
-			System.out.println("|");
-		}
-		System.out.println("End of Query");
+	while(true){ 
+		System.out.print("Enter the space agency name: "); 
+		agency = menuAns.nextLine(); 
+		if(!agency.isEmpty()) break;
 	}
 
-	public static void showPopularPart(Scanner menuAns, Connection mySQLDB) throws SQLException{
-		String ans;
-		int booknum = 0, i = 0;
-		String sql = "SELECT P.p_id, P.p_name, count(*) "+
-					 "FROM part P, transaction T "+
-					 "WHERE P.p_id = T.p_id "+
-					 "GROUP BY P.p_id, P.p_name "+
-					 "ORDER BY count(*) DESC";
+	while(true){ 
+		System.out.print("Enter the MID: ");
+	 	mid = menuAns.nextLine();  
+		if(!mid.isEmpty()) break;	
+	}
+
+	while(true){ 
+		System.out.print("Enter the SNum: "); 
+	 	snum = menuAns.nextLine();  
+	 	if(!snum.isEmpty()) break;
+	 }
+
+	String recordSQL = "SELECT R.Agency, R.MID, R.SNum ";
+	recordSQL += "FROM RentalRecord R ";
+	recordSQL += "WHERE R.Agency = ? AND R.MID = ? AND R.SNum = ? AND R.ReturnDate IS NOT NULL";
+
+	PreparedStatement stmt = mySQLDB.prepareStatement(recordSQL); 
+	stmt.setString(1, agency); 
+	stmt.setString(2, mid);
+	stmt.setInt(3, Integer.parseInt(snum));
+
+	ResultSet resultSet = stmt.executeQuery();
+	if(!resultSet.next()){ 
+		System.out.println("No available spacecraft based on the provided keyword! Returning to the main menu..."); 
+	}
+	else{
+		java.util.Date date = new java.util.Date();
+		String rentupdateSQL = "UPDATE RentalRecord R ";
+		rentupdateSQL += "SET ReturnDate = NULL, CheckoutDate = ? ";
+		rentupdateSQL += "WHERE R.Agency = ? AND R.MID= ? AND R.SNum= ?";
+
+		stmt = mySQLDB.prepareStatement(rentupdateSQL);
+		stmt.setDate(1, new Date(date.getTime()));
+		stmt.setString(2, agency); 
+		stmt.setString(3, mid);
+		stmt.setInt(4, Integer.parseInt(snum));
+
+		int success = stmt.executeUpdate();
+		if(success == 0){
+			System.out.println("Failed to rent the spacecraft, please try again! Returning to the main menu...");
+		}
+		else{
+			System.out.println("Spacecraft rented successfully!");
+		}
+	}
+	resultSet.close();
+	stmt.close();
+}
+
+	public static void returnSpacecraft(Scanner menuAns, Connection mySQLDB) throws SQLException{
+		String agency = null, mid = null, ans = null;
+		int snum = 0;
+		java.util.Date date = new java.util.Date();
+
+		String updateSQL = "UPDATE RentalRecord ";
+		updateSQL += "SET ReturnDate = ? ";
+		updateSQL += "WHERE Agency = ? AND MID = ? AND SNum = ? ";
 
 		while(true){
-			System.out.print("Type in the number of parts: ");
+			System.out.print("Enter the space agency name: ");
 			ans = menuAns.nextLine();
 			if(!ans.isEmpty()) break;
 		}
+		agency = ans;
 
-		booknum = Integer.parseInt(ans);
-		Statement stmt  = mySQLDB.createStatement();
-		ResultSet resultSet = stmt.executeQuery(sql);
-		System.out.println("| Part ID | Part Name | No. of Transaction |");
-		while(resultSet.next() && i < booknum){
-			System.out.println( "| " + resultSet.getString(1) + " " +
-								"| " + resultSet.getString(2) + " " +
-								"| " + resultSet.getString(3) + " " +
-								"|");
-			i++;
+		while(true){
+			System.out.print("Enter the MID: ");
+			ans = menuAns.nextLine();
+			if(!ans.isEmpty()) break;
 		}
-		System.out.println("End of Query");
+		mid = ans;
+
+		while(true){
+			System.out.print("Enter the SNum: ");
+			ans = menuAns.nextLine();
+			if(!ans.isEmpty()) break;
+		}
+		snum = Integer.parseInt(ans);
+
+		PreparedStatement stmt = mySQLDB.prepareStatement(updateSQL);
+		stmt.setDate(1, new Date(date.getTime()));
+		stmt.setString(2, agency);
+		stmt.setString(3, mid);
+		stmt.setInt(4, snum);
+
+		int success = stmt.executeUpdate();
+		if(success == 0){
+			System.out.println("Failed to return the spacecraft, please check your input!\nReturning to the main menu...");
+		}
+		else{
+			System.out.println("Spacecraft returned sucessfully!");
+		}
 		stmt.close();
 	}
 
@@ -679,6 +714,44 @@ public class CSCI3170Project {
 		stmt.close();
 	}
 
+	public static void listRentedSpacecraftGroupByAgency(Scanner menuAns, Connection mySQLDB) throws SQLException{
+		String searchSQL = "";
+		PreparedStatement stmt = null;
+
+		searchSQL += "SELECT Agency, COUNT(Agency) AS Number ";
+		searchSQL += "FROM RentalRecord ";
+		searchSQL += "WHERE ReturnDate IS NULL ";
+		searchSQL += "GROUP BY Agency ";
+		searchSQL += "ORDER BY Agency ASC";
+
+		stmt = mySQLDB.prepareStatement(searchSQL);
+		ResultSet resultSet = stmt.executeQuery();
+		if(!resultSet.next()){
+			System.out.println("No query result returned! Returning to the main menu...");
+		}
+		else{
+			String[] field_name = {"Agency", "Number"};
+			System.out.print(String.format("| %6s ", field_name[0]));  //Agency
+			System.out.print(String.format("| %6s ", field_name[1]));  //Number
+			// for (int i = 0; i < 2; i++){
+			// 	 System.out.print(String.format("| %6s ", field_name[i]));
+			// }
+			System.out.println("|");
+			do{
+				System.out.print(String.format("| %6s ", resultSet.getString(1)));  //Agency
+				System.out.print(String.format("| %6s ", resultSet.getString(2)));  //Number
+				// for (int i = 1; i <= 2; i++){
+				// 	System.out.print(String.format("| %6s ", resultSet.getString(i)));
+				// }
+				System.out.println("|");
+			} while(resultSet.next());
+
+			System.out.println("End of Query");
+		}
+		resultSet.close();
+		stmt.close();
+	}
+
 	public static void staffMenu(Scanner menuAns, Connection mySQLDB) throws SQLException{
 		String answer = "";
 
@@ -700,16 +773,16 @@ public class CSCI3170Project {
 		}
 
 		if(answer.equals("1")){
-			countSalespersonRecord(menuAns, mySQLDB);
+			rentSpaceCraft(menuAns, mySQLDB);
 		}
 		else if(answer.equals("2")){
-			countSalespersonRecord(menuAns, mySQLDB);
+			returnSpacecraft(menuAns, mySQLDB);
 		}
 		else if(answer.equals("3")){
 			listRentedSpacecraftByPeriod(menuAns, mySQLDB);
 		}
 		else if(answer.equals("4")){
-			listRentedSpacecraftByPeriod(menuAns, mySQLDB);
+			listRentedSpacecraftGroupByAgency(menuAns, mySQLDB);
 		}
 	}
 
