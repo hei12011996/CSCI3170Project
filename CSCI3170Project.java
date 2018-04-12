@@ -1,6 +1,8 @@
 import java.util.Scanner;
 import java.sql.*;
 import java.io.*;
+import java.text.SimpleDateFormat;
+
 public class CSCI3170Project {
 
 	public static String dbAddress = "jdbc:mysql://projgw.cse.cuhk.edu.hk:2312/db37";
@@ -610,24 +612,70 @@ public class CSCI3170Project {
 		stmt.close();
 	}
 
-	public static void showTotalSales(Scanner menuAns, Connection mySQLDB) throws SQLException{
-		String sql = "SELECT M.m_id, M.m_name, SUM(P.p_price) as total_sum "+
-					 "FROM transaction T, part P, manufacturer M " +
-					 "WHERE T.p_id = P.p_id AND P.m_id = M.m_id " +
-					 "GROUP BY M.m_id, M.m_name " + 
-					 "ORDER by total_sum DESC";
+	public static void listRentedSpacecraftByPeriod(Scanner menuAns, Connection mySQLDB) throws SQLException{
+		String ans = null, startdate = null, enddate = null;
+		String searchSQL = "";
+		PreparedStatement stmt = null;
 
-		Statement stmt  = mySQLDB.createStatement();
-		ResultSet resultSet = stmt.executeQuery(sql);
-	
-		System.out.println("| Manufacturer ID | Manufacturer Name | Total Sales Value |");
-		while(resultSet.next()){
-			System.out.println(	"| " + resultSet.getString(1) + " " +
-								"| " + resultSet.getString(2) + " " +          
-								"| " + resultSet.getString(3) + " " + 
-								"|"); 
+		searchSQL += "SELECT Agency, MID, SNum, CheckoutDate ";
+		searchSQL += "FROM RentalRecord ";
+		searchSQL += "WHERE ReturnDate IS NULL ";
+		searchSQL += "AND CheckoutDate >= ? ";
+		searchSQL += "AND CheckoutDate <= ? ";
+		searchSQL += "ORDER BY CheckoutDate DESC";
+
+		while(true){
+			System.out.print("Type in the starting date [DD-MM-YYYY]: ");
+			ans = menuAns.nextLine();
+			if(ans.matches("([0-3][0-9])-([0-1][0-9])-([0-9]{4})")) break;
+			System.out.println("[Error]: Please input the date in format [DD-MM-YYYY]!");
 		}
-		System.out.println("End of Query");
+		startdate = ans;
+
+		while(true){
+			System.out.print("Type in the ending date [DD-MM-YYYY]: ");
+			ans = menuAns.nextLine();
+			if(ans.matches("([0-3][0-9])-([0-1][0-9])-([0-9]{4})")) break;
+			System.out.println("[Error]: Please input the date in format [DD-MM-YYYY]!");
+		}
+		enddate = ans;
+
+		stmt = mySQLDB.prepareStatement(searchSQL);
+		try{
+			stmt.setDate(1, new Date((new SimpleDateFormat("dd-MM-yyyy").parse(startdate)).getTime()));
+			stmt.setDate(2, new Date((new SimpleDateFormat("dd-MM-yyyy").parse(enddate)).getTime()));
+		} catch (Exception e){
+			System.out.println("[Error]: Failed to recognize the date!");
+		}
+
+		ResultSet resultSet = stmt.executeQuery();
+		if(!resultSet.next()){
+			System.out.println("No query result returned based on the provided keyword! Returning to the main menu...");
+		}
+		else{
+			String[] field_name = {"Agency", "MID", "SNum", "Checkout Date"};
+			System.out.print(String.format("| %6s ", field_name[0]));  //Agency
+			System.out.print(String.format("| %4s ", field_name[1]));  //MID
+			System.out.print(String.format("| %4s ", field_name[2]));  //SNum
+			System.out.print(String.format("| %13s ", field_name[3])); //CheckoutDate
+			// for (int i = 0; i < 5; i++){
+			// 	 System.out.print(String.format("| %8s ", field_name[i]));
+			// }
+			System.out.println("|");
+			do{
+				System.out.print(String.format("| %6s ", resultSet.getString(1)));  //Agency
+				System.out.print(String.format("| %4s ", resultSet.getString(2)));  //MID
+				System.out.print(String.format("| %4s ", resultSet.getString(3)));  //SNum
+				System.out.print(String.format("| %13s ", resultSet.getString(4))); //CheckoutDate
+				// for (int i = 1; i <= 8; i++){
+				// 	System.out.print(String.format("| %8s ", resultSet.getString(i)));
+				// }
+				System.out.println("|");
+			} while(resultSet.next());
+
+			System.out.println("End of Query");
+		}
+		resultSet.close();
 		stmt.close();
 	}
 
@@ -655,13 +703,13 @@ public class CSCI3170Project {
 			countSalespersonRecord(menuAns, mySQLDB);
 		}
 		else if(answer.equals("2")){
-			showTotalSales(menuAns, mySQLDB);
+			countSalespersonRecord(menuAns, mySQLDB);
 		}
 		else if(answer.equals("3")){
-			showPopularPart(menuAns, mySQLDB);
+			listRentedSpacecraftByPeriod(menuAns, mySQLDB);
 		}
 		else if(answer.equals("4")){
-			showPopularPart(menuAns, mySQLDB);
+			listRentedSpacecraftByPeriod(menuAns, mySQLDB);
 		}
 	}
 
