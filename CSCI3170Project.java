@@ -426,6 +426,82 @@ public class CSCI3170Project {
 				// }
 				System.out.println("|");
 			} while(resultSet.next());
+
+			System.out.println("End of Query");
+		}
+		resultSet.close();
+		stmt.close();
+	}
+
+	public static void searchBeneficialMissionDesign(Scanner menuAns, Connection mySQLDB) throws SQLException{
+		String ans = null, budget = null, resource = null;
+		String searchSQL = "";
+		PreparedStatement stmt = null;
+
+		searchSQL += "SELECT NEA.NID, NEA.Family, S.Agency, S.MID, RentalRecord.SNum, NEA.Duration, ";
+		searchSQL += "S.Charge * NEA.Duration AS 'Cost', R.Value * R.Density * S.Capacity - S.Charge * NEA.Duration AS 'Benefit' ";
+		searchSQL += "FROM NEA LEFT JOIN Resource R ON NEA.Resources = R.Type, ";
+		searchSQL += "SpacecraftModel S LEFT JOIN RentalRecord ON S.Agency = RentalRecord.Agency AND S.MID = RentalRecord.MID ";
+		searchSQL += "WHERE S.Type = 'A' ";
+		searchSQL += "AND S.Energy > NEA.Energy ";
+		searchSQL += "AND S.T > NEA.Duration ";
+		searchSQL += "AND RentalRecord.ReturnDate IS NOT NULL ";
+		searchSQL += "AND NEA.Resources = ? ";
+		searchSQL += "AND R.Value * R.Density * S.Capacity - S.Charge * NEA.Duration <= ? ";
+		searchSQL += "ORDER BY Benefit DESC ";
+		searchSQL += "LIMIT 0, 1";
+
+		while(true){
+			System.out.print("Type in your budget [$]: ");
+			ans = menuAns.nextLine();
+			if(!ans.isEmpty()) break;
+		}
+		budget = ans;
+		while(true){
+			System.out.print("Type in the source type: ");
+			ans = menuAns.nextLine();
+			if(!ans.isEmpty()) break;
+		}
+		resource = ans;
+
+		stmt = mySQLDB.prepareStatement(searchSQL);
+		stmt.setString(1, resource);
+		stmt.setDouble(2, Double.parseDouble(budget));
+
+		ResultSet resultSet = stmt.executeQuery();
+		if(!resultSet.next()){
+			System.out.println("No query result returned based on the provided keyword! Returning to the main menu...");
+		}
+		else{
+			String[] field_name = {"NEA ID", "Family", "Agency", "MID", "SNum", "Duration", "Cost", "Benefit"};
+			System.out.print(String.format("| %10s ", field_name[0]));  //NEA ID
+			System.out.print(String.format("| %6s ", field_name[1]));  //Family
+			System.out.print(String.format("| %6s ", field_name[2]));  //Agency
+			System.out.print(String.format("| %4s ", field_name[3]));  //MID
+			System.out.print(String.format("| %4s ", field_name[4]));  //SNum
+			System.out.print(String.format("| %8s ", field_name[5])); //Duration
+			System.out.print(String.format("| %10s ", field_name[6])); //Cost
+			System.out.print(String.format("| %13s ", field_name[7])); //Benefit
+			// for (int i = 0; i < 5; i++){
+			// 	 System.out.print(String.format("| %8s ", field_name[i]));
+			// }
+			System.out.println("|");
+			do{
+				System.out.print(String.format("| %10s ", resultSet.getString(1)));  //NEA ID
+				System.out.print(String.format("| %6s ", resultSet.getString(2)));  //Family
+				System.out.print(String.format("| %6s ", resultSet.getString(3)));  //Agency
+				System.out.print(String.format("| %4s ", resultSet.getString(4)));  //MID
+				System.out.print(String.format("| %4s ", resultSet.getString(5)));  //SNum
+				System.out.print(String.format("| %8s ", resultSet.getString(6))); //Duration
+				System.out.print(String.format("| %10s ", resultSet.getString(7))); //Cost
+				System.out.print(String.format("| %13s ", resultSet.getString(8))); //Benefit
+				// for (int i = 1; i <= 8; i++){
+				// 	System.out.print(String.format("| %8s ", resultSet.getString(i)));
+				// }
+				System.out.println("|");
+			} while(resultSet.next());
+
+			System.out.println("End of Query");
 		}
 		resultSet.close();
 		stmt.close();
@@ -461,7 +537,7 @@ public class CSCI3170Project {
 			searchCertainMissionDesign(menuAns, mySQLDB);
 		}
 		else if(answer.equals("4")){
-			searchCertainMissionDesign(menuAns, mySQLDB);
+			searchBeneficialMissionDesign(menuAns, mySQLDB);
 		}
 	}
 
