@@ -154,7 +154,6 @@ public class CSCI3170Project {
 		} catch (Exception e){
 			System.out.println(e);
 		}
-
 	}
 
 	public static void showTables(Scanner menuAns, Connection mySQLDB) throws SQLException{
@@ -194,15 +193,19 @@ public class CSCI3170Project {
 
 		if(answer.equals("1")){
 			createTables(mySQLDB);
+			adminMenu(menuAns, mySQLDB);
 		}
 		else if(answer.equals("2")){
 			deleteTables(mySQLDB);
+			adminMenu(menuAns, mySQLDB);
 		}
 		else if(answer.equals("3")){
 			loadTables(menuAns, mySQLDB);
+			adminMenu(menuAns, mySQLDB);
 		}
 		else if(answer.equals("4")){
 			showTables(menuAns, mySQLDB);
+			adminMenu(menuAns, mySQLDB);
 		}
 	}
 
@@ -253,7 +256,7 @@ public class CSCI3170Project {
 
 		ResultSet resultSet = stmt.executeQuery();
 		if(!resultSet.next()){
-			System.out.println("No query result returned based on the provided keyword! Returning to the main menu...");
+			System.out.println("[Error]: Cannot found any NEA based on the keyword provided!");
 		}
 		else{
 			String[] field_name = {"ID", "Distance", "Family", "Duration", "Energy", "Resources"};
@@ -338,7 +341,7 @@ public class CSCI3170Project {
 
 		ResultSet resultSet = stmt.executeQuery();
 		if(!resultSet.next()){
-			System.out.println("No query result returned based on the provided keyword! Returning to the main menu...");
+			System.out.println("[Error]: Cannot found any spacecraft based on the keyword provided!");
 		}
 		else{
 			String[] field_name = {"Agency", "MID", "SNum", "Type", "Energy", "T", "Capacity", "Charge"};
@@ -404,7 +407,7 @@ public class CSCI3170Project {
 
 		ResultSet resultSet = stmt.executeQuery();
 		if(!resultSet.next()){
-			System.out.println("No query result returned based on the provided keyword! Returning to the main menu...");
+			System.out.println("No result returned based on the given condition!");
 		}
 		else{
 			String[] field_name = {"Agency", "MID", "SNum", "Cost", "Benefit"};
@@ -472,7 +475,7 @@ public class CSCI3170Project {
 
 		ResultSet resultSet = stmt.executeQuery();
 		if(!resultSet.next()){
-			System.out.println("No query result returned based on the provided keyword! Returning to the main menu...");
+			System.out.println("No result returned based on the given condition!");
 		}
 		else{
 			String[] field_name = {"NEA ID", "Family", "Agency", "MID", "SNum", "Duration", "Cost", "Benefit"};
@@ -531,75 +534,83 @@ public class CSCI3170Project {
 		
 		if(answer.equals("1")){
 			searchNEA(menuAns, mySQLDB);
+			customerMenu(menuAns, mySQLDB);
 		}
 		else if(answer.equals("2")){
 			searchSpacecraft(menuAns, mySQLDB);
+			customerMenu(menuAns, mySQLDB);
 		}
 		else if(answer.equals("3")){
 			searchCertainMissionDesign(menuAns, mySQLDB);
+			customerMenu(menuAns, mySQLDB);
 		}
 		else if(answer.equals("4")){
 			searchBeneficialMissionDesign(menuAns, mySQLDB);
+			customerMenu(menuAns, mySQLDB);
 		}
 	}
 
-public static void rentSpaceCraft(Scanner menuAns, Connection mySQLDB) throws SQLException{
-	String agency = null, mid = null, snum = null;
+	public static void rentSpaceCraft(Scanner menuAns, Connection mySQLDB) throws SQLException{
+		String agency = null, mid = null, snum = null;
 
-	while(true){ 
-		System.out.print("Enter the space agency name: "); 
-		agency = menuAns.nextLine(); 
-		if(!agency.isEmpty()) break;
-	}
+		while(true){ 
+			System.out.print("Enter the space agency name: "); 
+			agency = menuAns.nextLine(); 
+			if(!agency.isEmpty()) break;
+		}
 
-	while(true){ 
-		System.out.print("Enter the MID: ");
-	 	mid = menuAns.nextLine();  
-		if(!mid.isEmpty()) break;	
-	}
+		while(true){ 
+			System.out.print("Enter the MID: ");
+		 	mid = menuAns.nextLine();  
+			if(!mid.isEmpty()) break;	
+		}
 
-	while(true){ 
-		System.out.print("Enter the SNum: "); 
-	 	snum = menuAns.nextLine();  
-	 	if(!snum.isEmpty()) break;
-	 }
+		while(true){ 
+			System.out.print("Enter the SNum: "); 
+		 	snum = menuAns.nextLine();  
+		 	if(!snum.isEmpty()) break;
+		 }
 
-	String recordSQL = "SELECT R.Agency, R.MID, R.SNum ";
-	recordSQL += "FROM RentalRecord R ";
-	recordSQL += "WHERE R.Agency = ? AND R.MID = ? AND R.SNum = ? AND R.ReturnDate IS NOT NULL";
+		String recordSQL = "SELECT R.ReturnDate ";
+		recordSQL += "FROM RentalRecord R ";
+		recordSQL += "WHERE R.Agency = ? AND R.MID = ? AND R.SNum = ?";
+		// recordSQL += "WHERE R.Agency = ? AND R.MID = ? AND R.SNum = ? AND R.ReturnDate IS NOT NULL";
 
-	PreparedStatement stmt = mySQLDB.prepareStatement(recordSQL); 
-	stmt.setString(1, agency); 
-	stmt.setString(2, mid);
-	stmt.setInt(3, Integer.parseInt(snum));
+		PreparedStatement stmt = mySQLDB.prepareStatement(recordSQL); 
+		stmt.setString(1, agency); 
+		stmt.setString(2, mid);
+		stmt.setInt(3, Integer.parseInt(snum));
 
-	ResultSet resultSet = stmt.executeQuery();
-	if(!resultSet.next()){ 
-		System.out.println("No available spacecraft based on the provided keyword! Returning to the main menu..."); 
-	}
-	else{
-		java.util.Date date = new java.util.Date();
-		String rentupdateSQL = "UPDATE RentalRecord R ";
-		rentupdateSQL += "SET ReturnDate = NULL, CheckoutDate = ? ";
-		rentupdateSQL += "WHERE R.Agency = ? AND R.MID= ? AND R.SNum= ?";
-
-		stmt = mySQLDB.prepareStatement(rentupdateSQL);
-		stmt.setDate(1, new Date(date.getTime()));
-		stmt.setString(2, agency); 
-		stmt.setString(3, mid);
-		stmt.setInt(4, Integer.parseInt(snum));
-
-		int success = stmt.executeUpdate();
-		if(success == 0){
-			System.out.println("Failed to rent the spacecraft, please try again! Returning to the main menu...");
+		ResultSet resultSet = stmt.executeQuery();
+		if(!resultSet.next()){ 
+			System.out.println("[Error]: Cannot found spacecraft based on the keyword provided!");
+		}
+		else if (resultSet.getString(1) == null){
+			System.out.println("[Error]: This spacecraft has already been rented! Please try other spacecraft!");
 		}
 		else{
-			System.out.println("Spacecraft rented successfully!");
+			java.util.Date date = new java.util.Date();
+			String rentupdateSQL = "UPDATE RentalRecord R ";
+			rentupdateSQL += "SET ReturnDate = NULL, CheckoutDate = ? ";
+			rentupdateSQL += "WHERE R.Agency = ? AND R.MID= ? AND R.SNum= ?";
+
+			stmt = mySQLDB.prepareStatement(rentupdateSQL);
+			stmt.setDate(1, new Date(date.getTime()));
+			stmt.setString(2, agency); 
+			stmt.setString(3, mid);
+			stmt.setInt(4, Integer.parseInt(snum));
+
+			int success = stmt.executeUpdate();
+			if(success == 0){
+				System.out.println("Failed to rent the spacecraft, please try again!");
+			}
+			else{
+				System.out.println("Spacecraft rented successfully!");
+			}
 		}
+		resultSet.close();
+		stmt.close();
 	}
-	resultSet.close();
-	stmt.close();
-}
 
 	public static void returnSpacecraft(Scanner menuAns, Connection mySQLDB) throws SQLException{
 		String agency = null, mid = null, ans = null;
@@ -631,19 +642,39 @@ public static void rentSpaceCraft(Scanner menuAns, Connection mySQLDB) throws SQ
 		}
 		snum = Integer.parseInt(ans);
 
-		PreparedStatement stmt = mySQLDB.prepareStatement(updateSQL);
-		stmt.setDate(1, new Date(date.getTime()));
-		stmt.setString(2, agency);
-		stmt.setString(3, mid);
-		stmt.setInt(4, snum);
+		String recordSQL = "SELECT R.ReturnDate ";
+		recordSQL += "FROM RentalRecord R ";
+		recordSQL += "WHERE R.Agency = ? AND R.MID = ? AND R.SNum = ?";
 
-		int success = stmt.executeUpdate();
-		if(success == 0){
-			System.out.println("Failed to return the spacecraft, please check your input!\nReturning to the main menu...");
+		PreparedStatement stmt = mySQLDB.prepareStatement(recordSQL); 
+		stmt.setString(1, agency); 
+		stmt.setString(2, mid);
+		stmt.setInt(3, snum);
+
+		ResultSet resultSet = stmt.executeQuery();
+		if(!resultSet.next()){ 
+			System.out.println("[Error]: Cannot found the spacecraft based on the keyword provided!");
+		}
+		else if (resultSet.getString(1) != null){
+			System.out.println("[Error]: This spacecraft has already been returned!");
 		}
 		else{
-			System.out.println("Spacecraft returned sucessfully!");
+			stmt = mySQLDB.prepareStatement(updateSQL);
+			stmt.setDate(1, new Date(date.getTime()));
+			stmt.setString(2, agency);
+			stmt.setString(3, mid);
+			stmt.setInt(4, snum);
+
+			int success = stmt.executeUpdate();
+			if(success == 0){
+				System.out.println("Failed to return the spacecraft, please check your input!");
+			}
+			else{
+				System.out.println("Spacecraft returned sucessfully!");
+			}
 		}
+
+		resultSet.close();
 		stmt.close();
 	}
 
@@ -685,7 +716,7 @@ public static void rentSpaceCraft(Scanner menuAns, Connection mySQLDB) throws SQ
 
 		ResultSet resultSet = stmt.executeQuery();
 		if(!resultSet.next()){
-			System.out.println("No query result returned based on the provided keyword! Returning to the main menu...");
+			System.out.println("Sorry! Cannot find any rented spacecraft based on the given condition!");
 		}
 		else{
 			String[] field_name = {"Agency", "MID", "SNum", "Checkout Date"};
@@ -727,7 +758,7 @@ public static void rentSpaceCraft(Scanner menuAns, Connection mySQLDB) throws SQ
 		stmt = mySQLDB.prepareStatement(searchSQL);
 		ResultSet resultSet = stmt.executeQuery();
 		if(!resultSet.next()){
-			System.out.println("No query result returned! Returning to the main menu...");
+			System.out.println("Sorry! No record returned! Please try again!");
 		}
 		else{
 			String[] field_name = {"Agency", "Number"};
@@ -774,21 +805,25 @@ public static void rentSpaceCraft(Scanner menuAns, Connection mySQLDB) throws SQ
 
 		if(answer.equals("1")){
 			rentSpaceCraft(menuAns, mySQLDB);
+			staffMenu(menuAns, mySQLDB);
 		}
 		else if(answer.equals("2")){
 			returnSpacecraft(menuAns, mySQLDB);
+			staffMenu(menuAns, mySQLDB);
 		}
 		else if(answer.equals("3")){
 			listRentedSpacecraftByPeriod(menuAns, mySQLDB);
+			staffMenu(menuAns, mySQLDB);
 		}
 		else if(answer.equals("4")){
 			listRentedSpacecraftGroupByAgency(menuAns, mySQLDB);
+			staffMenu(menuAns, mySQLDB);
 		}
 	}
 
 	public static void main(String[] args) {
 		Scanner menuAns = new Scanner(System.in);
-		System.out.println("Welcome to sales system!");
+		System.out.println("Welcome to The NEAs Exploration Mission Design System!");
 
 		while(true){
 			try{
