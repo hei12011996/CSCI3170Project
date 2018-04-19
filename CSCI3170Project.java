@@ -107,7 +107,7 @@ public class CSCI3170Project {
 		String loadDataSQL = "LOAD DATA LOCAL INFILE \"./";
 		loadDataSQL += filePath;
 
-		String neaSQL = loadDataSQL + "/Near-Earth Asteroids.txt\" ";
+		String neaSQL = loadDataSQL + "/neas.txt\" ";
 		neaSQL += "INTO TABLE NEA ";
 		neaSQL += "FIELDS TERMINATED BY '\t' ";
 		neaSQL += "LINES TERMINATED BY '\n' ";
@@ -116,14 +116,14 @@ public class CSCI3170Project {
 		neaSQL += "SET ";
 		neaSQL += "Resources = NULLIF(@resource, 'null') ";
 
-		String resourceSQL = loadDataSQL + "/Resources Details.txt\" ";
+		String resourceSQL = loadDataSQL + "/resources.txt\" ";
 		resourceSQL += "INTO TABLE Resource ";
 		resourceSQL += "FIELDS TERMINATED BY '\t' ";
 		resourceSQL += "LINES TERMINATED BY '\n' ";
 		resourceSQL += "IGNORE 1 ROWS ";
 		resourceSQL += "(Type, Density, Value) ";
 
-		String spacecraftSQL = loadDataSQL + "/Space Agencies\' Spacecrafts.txt\" ";
+		String spacecraftSQL = loadDataSQL + "/spacecrafts.txt\" ";
 		spacecraftSQL += "INTO TABLE SpacecraftModel ";
 		spacecraftSQL += "FIELDS TERMINATED BY '\t' ";
 		spacecraftSQL += "LINES TERMINATED BY '\n' ";
@@ -132,7 +132,7 @@ public class CSCI3170Project {
 		spacecraftSQL += "SET ";
 		spacecraftSQL += "Capacity = NULLIF(@capacity, 'null') ";
 
-		String rentalrecordSQL = loadDataSQL + "/Spacecraft Rental Records.txt\" ";
+		String rentalrecordSQL = loadDataSQL + "/rentalrecords.txt\" ";
 		rentalrecordSQL += "INTO TABLE RentalRecord ";
 		rentalrecordSQL += "FIELDS TERMINATED BY '\t' ";
 		rentalrecordSQL += "LINES TERMINATED BY '\n' ";
@@ -452,7 +452,7 @@ public class CSCI3170Project {
 		searchSQL += "AND S.T > NEA.Duration ";
 		searchSQL += "AND RentalRecord.ReturnDate IS NOT NULL ";
 		searchSQL += "AND NEA.Resources = ? ";
-		searchSQL += "AND R.Value * R.Density * S.Capacity - S.Charge * NEA.Duration <= ? ";
+		searchSQL += "AND S.Charge * NEA.Duration <= ? ";
 		searchSQL += "ORDER BY Benefit DESC ";
 		searchSQL += "LIMIT 0, 1";
 
