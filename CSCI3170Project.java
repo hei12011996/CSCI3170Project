@@ -384,7 +384,7 @@ public class CSCI3170Project {
 		String searchSQL = "";
 		PreparedStatement stmt = null;
 
-		searchSQL += "SELECT S.Agency, S.MID, RentalRecord.SNum, S.Charge * NEA.Duration AS 'Cost', R.Value * R.Density * S.Capacity - S.Charge * NEA.Duration AS 'Benefit'";
+		searchSQL += "SELECT S.Agency, S.MID, RentalRecord.SNum, S.Charge * NEA.Duration AS 'Cost', R.Value * R.Density * S.Capacity * 100 * 100 * 100 - S.Charge * NEA.Duration AS 'Benefit'";
 		searchSQL += "FROM NEA LEFT JOIN Resource R ON NEA.Resources = R.Type, ";
 		searchSQL += "SpacecraftModel S LEFT JOIN RentalRecord ON S.Agency = RentalRecord.Agency AND S.MID = RentalRecord.MID ";
 		searchSQL += "WHERE S.Type = 'A' ";
@@ -444,7 +444,7 @@ public class CSCI3170Project {
 		PreparedStatement stmt = null;
 
 		searchSQL += "SELECT NEA.NID, NEA.Family, S.Agency, S.MID, RentalRecord.SNum, NEA.Duration, ";
-		searchSQL += "S.Charge * NEA.Duration AS 'Cost', R.Value * R.Density * S.Capacity - S.Charge * NEA.Duration AS 'Benefit' ";
+		searchSQL += "S.Charge * NEA.Duration AS 'Cost',  R.Value * R.Density * S.Capacity * 100 * 100 * 100 - S.Charge * NEA.Duration AS 'Benefit' ";
 		searchSQL += "FROM NEA LEFT JOIN Resource R ON NEA.Resources = R.Type, ";
 		searchSQL += "SpacecraftModel S LEFT JOIN RentalRecord ON S.Agency = RentalRecord.Agency AND S.MID = RentalRecord.MID ";
 		searchSQL += "WHERE S.Type = 'A' ";
