@@ -327,13 +327,13 @@ public class CSCI3170Project {
 			searchSQL += " S.Type = ? ";
 		}
 		else if(method.equals("3")){
-			searchSQL += " S.Energy = ? ";
+			searchSQL += " S.Energy >= ? ";
 		}
 		else if(method.equals("4")){
-			searchSQL += " S.Capacity = ? ";
+			searchSQL += " S.T >= ? ";
 		}
 		else if(method.equals("5")){
-			searchSQL += " S.Charge = ? ";
+			searchSQL += " S.Capacity >= ? ";
 		}
 
 		stmt = mySQLDB.prepareStatement(searchSQL);
